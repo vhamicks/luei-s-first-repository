@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>登录</title>
+	<style type="text/css">
+	    * {
+             margin: 0;
+             padding: 0;
+             box-sizing: border-box;
+         }
+         body {
+             background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 25%, #f6d365 50%, #4facfe 75%, #00f2fe 100%);
+             height: 100vh;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             font-family: "Microsoft YaHei", sans-serif;
+         }
+         .login-box {
+             width: 400px;
+             background: #fff;
+             padding: 40px;
+             border-radius: 10px;
+             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+         }
+         .login-box h2 {
+             text-align: center;
+             margin-bottom: 30px;
+             color: #333;
+         }
+         .form-item {
+             margin-bottom: 25px;
+         }
+         .form-item label {
+             display: block;
+             margin-bottom: 8px;
+             color: #666;
+             font-size: 14px;
+         }
+         .form-item input {
+             width: 100%;
+             padding: 12px 15px;
+             border: 1px solid #ddd;
+             border-radius: 5px;
+             font-size: 16px;
+             transition: border-color 0.3s;
+         }
+         .form-item input:focus {
+             outline: none;
+             border-color: #667eea;
+             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+         }
+         .login-btn {
+             width: 100%;
+             padding: 14px;
+             background: #667eea;
+             border: none;
+             border-radius: 5px;
+             color: #fff;
+             font-size: 16px;
+             cursor: pointer;
+             transition: background 0.3s;
+         }
+         .login-btn:hover {
+             background: #5a6edb;
+         }
+          #errorMsg {
+             margin-top: 15px;
+             text-align: center;
+             color: #ff4d4f;
+             font-size: 14px;
+             height: 20px;
+         }
+     </style>
+ </head>
+ <body>
+     <div class="login-box">
+         <h2>登录</h2>
+         <div class="form-item">
+             <label>账号</label>
+             <input type="text" id="username" placeholder="请输入账号" autocomplete="off">
+         </div>
+         <div class="form-item">
+             <label>密码</label>
+             <input type="password" id="password" placeholder="请输入密码">
+         </div>
+         <button class="login-btn" onclick="login()">登录</button>
+         <div id="errorMsg"></div>
+     </div>
+     <script>
+         // 模拟合法账号密码（实际项目中需对接后端接口验证）
+         const validUser = {
+             username: "罗青文",
+             password: "20070327" // 实际项目中后端存储的是加密后的密码
+         };
+
+         // 登录核心函数
+         function login() {
+             // 1. 获取DOM元素和输入值
+             const usernameInput = document.getElementById("username");
+             const passwordInput = document.getElementById("password");
+             const errorMsg = document.getElementById("errorMsg");
+             
+             // 去除输入值两端空格
+             const username = usernameInput.value.trim();
+             const password = passwordInput.value.trim();
+
+             // 2. 清空之前的错误提示
+             errorMsg.textContent = "";
+
+             // 3. 表单验证
+             if (!username) {
+                 errorMsg.textContent = "请输入账号！";
+                 usernameInput.focus(); // 聚焦到空输入框
+                 return;
+             }
+             if (!password) {
+                 errorMsg.textContent = "请输入密码！";
+                 passwordInput.focus(); // 聚焦到空输入框
+                 return;
+             }
+
+             // 4. 验证账号密码（实际项目中替换为后端接口请求）
+             if (username === validUser.username && password === validUser.password) {
+                 // 存储登录状态和用户信息
+                 localStorage.setItem("isLogin", "true");
+                 localStorage.setItem("username", username);
+                 localStorage.setItem('access-flag','from-login');
+                 
+                 // 提示并跳转
+                 alert('登录成功，正在跳转');
+                 window.location.href = "3.html";
+             } else {
+                 errorMsg.textContent = "账号或密码错误，请重试！";
+                 // 清空密码框
+                 passwordInput.value = "";
+                 passwordInput.focus();
+             }
+         }
+
+         // 支持回车登录（密码框按回车触发登录）
+         document.getElementById("password").addEventListener("keyup", (e) => {
+             if (e.key === "Enter") {
+                 login();
+             }
+         });
+
+         // 账号框也支持回车聚焦到密码框
+         document.getElementById("username").addEventListener("keyup", (e) => {
+             if (e.key === "Enter") {
+                 document.getElementById("password").focus();
+             }
+         });
+     </script>
+</body>
+</html>
