@@ -89,55 +89,32 @@
          <div id="errorMsg"></div>
      </div>
      <script>
-         // 模拟合法账号密码（实际项目中需对接后端接口验证）
-         const validUser = {
-             username: "罗青文",
-             password: "20070327" // 实际项目中后端存储的是加密后的密码
-         };
+             // 账号-密码-页面 映射
+    const userMap = {
+      "罗青文": { pwd: "20070327", url: "3.html" },
+      "周天怡秀": { pwd: "20070330", url: "9.html" },
+      "user2": { pwd: "user456", url: "user2.html" },
 
-         // 登录核心函数
-         function login() {
-             // 1. 获取DOM元素和输入值
-             const usernameInput = document.getElementById("username");
-             const passwordInput = document.getElementById("password");
-             const errorMsg = document.getElementById("errorMsg");
-             
-             // 去除输入值两端空格
-             const username = usernameInput.value.trim();
-             const password = passwordInput.value.trim();
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const err = document.getElementById("errorMsg");
 
-             // 2. 清空之前的错误提示
-             errorMsg.textContent = "";
+      // 非空判断
+      if (!username || !password) {
+        err.textContent = "账号和密码不能为空";
+        return;
+      }
 
-             // 3. 表单验证
-             if (!username) {
-                 errorMsg.textContent = "请输入账号！";
-                 usernameInput.focus(); // 聚焦到空输入框
-                 return;
-             }
-             if (!password) {
-                 errorMsg.textContent = "请输入密码！";
-                 passwordInput.focus(); // 聚焦到空输入框
-                 return;
-             }
-
-             // 4. 验证账号密码（实际项目中替换为后端接口请求）
-             if (username === validUser.username && password === validUser.password) {
-                 // 存储登录状态和用户信息
-                 localStorage.setItem("isLogin", "true");
-                 localStorage.setItem("username", username);
-                 localStorage.setItem('access-flag','from-login');
-                 
-                 // 提示并跳转
-                 alert('登录成功，正在跳转');
-                 window.location.href = "3.html";
-             } else {
-                 errorMsg.textContent = "账号或密码错误，请重试！";
-                 // 清空密码框
-                 passwordInput.value = "";
-                 passwordInput.focus();
-             }
-         }
+      // 查找用户
+      const user = userMap[username];
+      if (user && user.pwd === password) {
+        err.textContent = "";
+        location.href = user.url; // 跳转
+      } else {
+        err.textContent = "账号或密码错误";
+      }
+    }
 
          // 支持回车登录（密码框按回车触发登录）
          document.getElementById("password").addEventListener("keyup", (e) => {
