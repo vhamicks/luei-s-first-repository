@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>给Sunday的歌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+             min-height: 100vh;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             color: #fff;}
+        .music-player {
+            width: 90%;
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: #fff;
+        }
+        .music-title {
+            font-size: 22px;
+            margin: 10px 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-singer {
+            font-size: 16px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        /* 歌词容器样式优化 */
+        .lyric-box {
+            width: 100%;
+            height: 180px;
+            line-height: 36px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px 0;
+        }
+        .lyric-list {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: top 0.3s ease;
+        }
+        .lyric-item {
+            font-size: 16px;
+            color: #ccc;
+            height: 36px;
+            transition: all 0.2s ease;
+        }
+        .lyric-item.active {
+            color: #25d366;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        /* 双语歌词样式 */
+        .lyric-item .dual {
+            font-size: 12px;
+            color: #999;
+            display: block;
+            line-height: 1.2;
+            margin-top: -8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .progress {
+            height: 100%;
+            background: #25d366;
+            border-radius: 3px;
+            width: 0%;
+        }
+        .time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #ccc;
+            margin-top: -5px;
+            margin-bottom: 20px;
+        }
+        .control-btns {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin: 10px 0;
+        }
+        .btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #25d366;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #12b24e;
+            transform: scale(1.1);
+        }
+        .play-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+        .volume {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .volume-bar {
+            width: 150px;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .volume-progress {
+            height: 100%;
+            background: #25d366;
+            border-radius: 3px;
+            width: 80%;
+        }
+        /* 提示文本样式 */
+        .tip-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="music-player">
+        <h2 class="music-title">生日快乐</h2>
+        <p class="music-singer">卓依婷</p>
+        <!-- 歌词容器 -->
+        <div class="lyric-box" id="lyricBox">
+            <div class="lyric-list" id="lyricList"></div>
+        </div>
+        <div class="progress-bar" id="progressBar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="time">
+            <span id="currentTime">00:00</span>
+            <span id="totalTime">00:00</span>
+        </div>
+        <div class="control-btns">
+            <button class="btn" id="prevBtn">◀◀</button>
+            <button class="btn play-btn" id="playBtn">▶</button>
+            <button class="btn" id="nextBtn">▶▶</button>
+        </div>
+        <div class="volume">
+            <span>🔊</span>
+            <div class="volume-bar" id="volumeBar">
+                <div class="volume-progress" id="volumeProgress"></div>
+            </div>
+    <script>
+        // 音乐+歌词列表：优化双语歌词格式，修复语法错误
+        const musicList = [
+            { 
+                title: "生日快乐", 
+                singer: "卓依婷", 
+                src: "生日快乐 - 卓依婷.mp3", // 简化路径，建议和网页同目录
+                lyrics: [
+                    [0,"生日快乐 - 卓依婷"],
+                    [11,"祝你生日快乐"],
+                    [14,"祝你生日快乐"],
+                    [17,"祝你幸福祝你健康"],
+                    [20,"祝你前途光明"],
+                    [23,"祝你生日快乐"],
+                    [26,"祝你生日快乐"],
+                    [29,"祝你幸福祝你健康"],
+                    [32,"有个温暖家庭"],
+                    [48,"Happy birthday to you"],
+                    [51,"Happy birthday to you"],
+                    [54,"Happy birthday happy birthday"],
+                    [57,"Happy birthday to you"],
+                    [60,"Happy birthday to you"],
+                    [63,"Happy birthday to you"],
+                    [66,"Happy birthday Happy birthday"],
+                    [69,"Happy birthday to you"],
+                    [78,"祝你生日快乐"],
+                    [81,"祝你生日快乐"],
+                    [84,"祝你幸福祝你健康"],
+                    [87,"祝你前途光明"],
+                    [90,"祝你生日快乐"],
+                    [93,"祝你生日快乐"],
+                    [96,"祝你幸福祝你健康"],
+                    [99,"有个温暖家庭"]
+                ]
+            },
+            { 
+                title: "主角", 
+                singer: "马里奥", 
+                src: "马里奥 - 主角.mp3", // 简化路径
+                lyrics: [
+                    [0, "主角 - Mario"],
+                    [2,"作词：draceana"],
+                    [4,"作曲：曲扬"],
+                    [6,"编曲：曲扬"],
+                    [8,"混音：Beicana"],
+                    [10,"吉他：葛金桥Joe"],
+                    [14,"蜿蜒的长河"],
+                    [17,"落叶就随意漂泊"],
+                    [20,"从不留恋着"],
+                    [23,"那些早已褪去的颜色"],
+                    [26,"划掉了不舍"],
+                    [29,"该放就放也许不必背负"],
+                    [33,"太多枷锁"],
+                    [49,"时间的流波"],
+                    [52,"让人们手足无措"],
+                    [55,"无情地吞没"],
+                    [58,"那些无法重现的景色"],
+                    [61,"只需要记得"],
+                    [64,"从前现在都要坚持自我"],
+                    [68,"多点幽默"],
+                    [75,"过去的走过去就过了别过"],
+                    [80,"何必再多说"],
+                    [82,"应诺了就去做承诺"],
+                    [86,"不应推脱"],
+                    [87,"故事之中"],
+                    [90,"唯一独特的主要角色"],
+                    [94,"是你是我"],
+                    [98,"多余的留多余就多了太多"],
+                    [103,"还犹豫什么"],
+                    [105,"要断的就断了利落"],
+                    [109,"无需斟酌"],
+                    [111,"从始至终"],
+                    [113,"总是相伴的主要角色"],
+                    [118,"是你是我"],
+                    [134,"北风的摧挫"],
+                    [137,"未必就因此败落"],
+                    [140,"干涸的脉络"],
+                    [143,"反而沾染美丽的红色"],
+                    [146,"命运在诉说"],
+                    [148,"最终所得全部都是自己"],
+                    [153,"如何抉择"],
+                    [157,"过去的走过去就过了别过"],
+                    [162,"何必再多说"],
+                    [164,"应诺了就去做承诺"],
+                    [168,"不应推脱"],
+                    [169,"故事之中"],
+                    [172,"唯一独特的主要角色"],
+                    [177,"是你是我"],
+                    [180,"多余的留多余就多了太多"],
+                    [185,"还犹豫什么"],
+                    [187,"想断的就断了利落"],
+                    [191,"无需斟酌"],
+                    [193,"从始至终"],
+                    [195,"总是相伴的主要角色"],
+                    [200,"是你是我"],
+                    [215,"无需斟酌"],
+                    [216,"从始至终"],
+                    [219,"总是相伴的主要角色"],
+                    [223,"是你是我"],
+                    [229,"是你是我"],
+                    [234,"陪你陪我"],
+                    [238,"一起度过"]
+                ]
+            },
+            {
+                title:"First Love",
+                singer:"宇多田ヒカル",
+                src:"宇多田ヒカル - First Love.mp3", // 简化路径
+                lyrics : [
+                    [0,"First Love - 宇多田光(宇多田ヒカル)"],
+                    [3,"词：宇多田ヒカル"],
+                    [5,"曲：宇多田ヒカル"],
+                    [7,"编曲：河野圭"],
+                    [9,"Strings Arrange：河野圭"],
+                    [12,"Keyboards Programming：河野圭"],
+                    [14,"Synthesizer Programming：百々政幸"],
+                    [16,"Synthesizer Programming：飯田高広"],
+                    [18,"Guitar：秋山浩徳"],
+                    [20,"Strings：後藤勇一郎"], // 修复：添加缺失的逗号
+                    [22,"最後のキスは<span class='dual'>最后的吻</span>"],
+                    [27,"タバコのflavorがした<span class='dual'>带着淡淡的烟草味</span>"],
+                    [32,"ニガくてせつない香り<span class='dual'>苦涩而令人心碎的香味</span>"],
+                    [43,"明日の今頃には<span class='dual'>明天的这个时候</span>"],
+                    [48,"あなたはどこにいるんだろう<span class='dual'>你会在哪里</span>"],
+                    [54,"誰を想ってるんだろう<span class='dual'>会想着谁</span>"],
+                    [65,"You are always gonna be my love<span class='dual'>我会永远爱着你</span>"],
+                    [69,"いつか誰かとまた恋に落ちても<span class='dual'>就算将来爱上其他人</span>"],
+                    [76,"I'll remember to love<span class='dual'>我也会记得去爱</span>"],
+                    [78,"You taught me how<span class='dual'>这是你教会我的</span>"],
+                    [81,"You are always gonna be the one<span class='dual'>你永远都是我的唯一</span>"],
+                    [85,"今はまだ悲しいlove song<span class='dual'>如今悲伤情歌依然不止</span>"],
+                    [92,"新しい歌 うたえるまで<span class='dual'>直至唱出新的歌曲</span>"],
+                    [113,"立ち止まる時間が<span class='dual'>停滞的时间</span>"],
+                    [119,"動き出そうとしてる<span class='dual'>开始慢慢运转</span>"],
+                    [123,"忘れたくないことばかり<span class='dual'>剩下的尽是难以忘怀的事情</span>"],
+                    [134,"明日の今頃には<span class='dual'>明天的这个时候</span>"],
+                    [139,"わたしはきっと泣いてる<span class='dual'>我一定会流着泪</span>"],
+                    [144,"あなたを想ってるんだろう<span class='dual'>想起深爱过的你</span>"],
+                    [156,"You will always be inside my heart<span class='dual'>你会永远占据我的心</span>"],
+                    [159,"いつもあなただけの<span class='dual'>在我心中永远</span>"],
+                    [163,"場所があるから<span class='dual'>给你留下一片空间</span>"],
+                    [166,"I hope that I have a place in your heart too<span class='dual'>希望我在你心里也能有一席之地</span>"],
+                    [172,"Now and forever you are still the one<span class='dual'>直到永远你仍是我心里的唯一</span>"],
+                    [176,"今はまだ悲しいlove song<span class='dual'>如今悲伤情歌依然不止</span>"],
+                    [183,"新しい歌 うたえるまで<span class='dual'>直至唱出新的歌曲</span>"],
+                    [193,"You are always gonna be my love<span class='dual'>你将是我永远的挚爱</span>"],
+                    [197,"いつか誰かとまた恋に落ちても<span class='dual'>就算将来爱上其他人</span>"],
+                    [203,"I'll remember to love<span class='dual'>我也会记得去爱</span>"],
+                    [206,"You taught me how<span class='dual'>这是你教会我的</span>"],
+                    [209,"You are always gonna be the one<span class='dual'>你永远都是我的唯一</span>"],
+                    [215,"まだ悲しいlove song<span class='dual'>如今悲伤情歌依然不止</span>"],
+                    [221,"Now and forever<span class='dual'>直到永远</span>"]
+                ]
+            },
+            {
+                title:"Blueming",
+                singer:"IU",
+                src:"https://github.com/vhamicks/luei-s-first-repository/raw/refs/heads/main/IU%20-%20Blueming.mp3", // 简化路径
+                lyrics : [
+                    [0,"IU - Blueming"],
+                    [2,"作词：아이유"],
+                    [3,"作曲：이종훈、이채규、아이유"],
+                    [4,"编曲：이종훈、이채규"],
+                    [9,"뭐해라는 두 글자에<span class='dual'>在干嘛 几个字里</span>"],
+                    [12,"네가 보고 싶어<span class='dual'>包含 我想你</span>"],
+                    [13,"나의 속마음을 담아 우<span class='dual'>这样的心意</span>"],
+                    [18,"이모티콘 하나하나 속에<span class='dual'>一个个的表情符号里</span>"],
+                    [20,"달라지는 내 미묘한 심리를 알까 우<span class='dual'>我不断变化的微妙心思 你可知道啊</span>"],
+                    [27,"아니 바쁘지 않아 nothing no no<span class='dual'>没有 不忙啊 nothing no no</span>"],
+                    [31,"잠들어 있지 않아 insomnia nia nia<span class='dual'>没睡没睡 insomnia nia nia</span>"],
+                    [36,"지금 다른 사람과 함께이지 않아<span class='dual'>现在没有和别人在一起</span>"],
+                    [40,"응 나도 너를 생각 중<span class='dual'>我也在想着你呐</span>"],
+                    [45,"우리의 네모 칸은 bloom<span class='dual'>我们的方框里百花齐放</span>"],
+                    [49,"엄지손가락으로 장미꽃을 피워<span class='dual'>拇指上盛开的玫瑰花</span>"],
+                    [54,"향기에 취할 것 같아 우<span class='dual'>仿佛沉醉在这芬芳里啊</span>"],
+                    [58,"오직 둘만의 비밀의 정원<span class='dual'>你我专属的秘密花园</span>"],
+                    [63,"I feel bloom I feel bloom I feel bloom"],
+                    [77,"너에게 한 송이를 더 보내<span class='dual'>给你再多送一朵吧</span>"],
+                    [86,"밤샘 작업으로 업데이트<span class='dual'>熬夜工作 update</span>"],
+                    [88,"흥미로운 이 작품의 지은이 that's me 우<span class='dual'>这趣味横生的作品 作者就是知恩 我</span>"],
+                    [95,"어쩜 이 관계의 클라이맥스<span class='dual'>也许这段关系已经到达顶峰</span>"],
+                    [97,"2막으로 넘어가기엔 지금이 good timing 우<span class='dual'>现在正是进入第2幕的最好时候</span>"],
+                    [104,"같은 맘인 걸 알아 realize la lize<span class='dual'>我知道我们心意相通 realize la lize</span>"],
+                    [106,"말을 고르지 말아 just reply la la ly<span class='dual'>不要再斟酌字句 just reply la la ly</span>"],
+                    [114,"조금 장난스러운 나의 은유에<span class='dual'>对我带着玩笑意味的隐喻</span>"],
+                    [117,"네 해석이 궁금해<span class='dual'>很想知道你如何解析</span>"],
+                    [122,"우리의 색은 gray and blue<span class='dual'>我们的颜色是gray and blue</span>"],
+                    [127,"엄지손가락으로 말풍선을 띄워<span class='dual'>用大拇指将对话框发送</span>"],
+                    [131,"금세 터질 것 같아 우<span class='dual'>好像立刻就会爆炸</span>"],
+                    [136,"호흡이 가빠져 어지러워<span class='dual'>呼吸变得急促 脑袋发晕</span>"],
+                    [140,"I feel blue I feel blue I feel blue"],
+                    [154,"너에게 가득히 채워<span class='dual'>被你填满我的心</span>"],
+                    [158,"띄어쓰기없이보낼게사랑인것같애<span class='dual'>没有空格就这样发送仿佛就是爱情</span>"],
+                    [162,"백만송이장미꽃을 나랑피워볼래<span class='dual'>要不要和我一起 绽放爱的百万朵玫瑰</span>"],
+                    [167,"꽃잎의 색은 우리 마음 가는 대로 칠해<span class='dual'>花瓣的颜色就由我们随心涂抹</span>"],
+                    [172,"시들 때도 예쁘게<span class='dual'>即便凋零依旧美丽</span>"],
+                    [176,"우리의 네모 칸은 bloom<span class='dual'>我们的方框里百花齐放</span>"],
+                    [181,"엄지손가락으로 장미꽃을 피워<span class='dual'>拇指上盛开的玫瑰花</span>"],
+                    [185,"향기에 취할 것 같아 우<span class='dual'>仿佛沉醉在这芬芳里啊</span>"],
+                    [190,"오직 둘만의 비밀의 정원<span class='dual'>你我专属的秘密花园</span>"],
+                    [194,"I feel bloom I feel bloom I feel bloom"],
+                    [208,"너에게 한 송이를 더 보내<span class='dual'>给你再多送一朵吧</span>"]
+                ]    
+            }
+        ];
+
+        // 获取DOM元素
+        const audio = new Audio();
+        let currentIndex = 0;
+        let isPlaying = false;
+        const lyricList = document.getElementById('lyricList');
+        const lyricBox = document.getElementById('lyricBox');
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const musicTitle = document.querySelector('.music-title');
+        const musicSinger = document.querySelector('.music-singer');
+        const volumeBar = document.getElementById('volumeBar');
+        const volumeProgress = document.getElementById('volumeProgress');
+
+        // 初始化音乐+歌词
+        function initMusic(index) {
+            lyricList.innerHTML = '';
+            const music = musicList[index];
+            audio.src = music.src;
+            musicTitle.innerText = music.title;
+            musicSinger.innerText = music.singer;
+            audio.load();
+            renderLyrics(music.lyrics);
+            
+            // 加载总时长（添加容错）
+            audio.onloadedmetadata = () => {
+                totalTimeEl.innerText = formatTime(audio.duration || 0);
+            };
+            
+            // 音频加载失败处理
+            audio.onerror = () => {
+                alert(`无法加载音频文件：${music.title}\n请检查文件路径是否正确，建议将音频文件与网页放在同一目录`);
+            };
+        }
+        
+        // 初始化第一首
+        initMusic(currentIndex);
+
+        // 渲染歌词（支持HTML解析）
+        function renderLyrics(lyrics) {
+            lyrics.forEach(item => {
+                const li = document.createElement('div');
+                li.className = 'lyric-item';
+                li.innerHTML = item[1]; // 使用innerHTML支持HTML标签
+                li.dataset.time = item[0];
+                lyricList.appendChild(li);
+            });
+        }
+
+        // 匹配并滚动歌词（优化边界处理）
+        function updateLyric() {
+            const currentTime = audio.currentTime;
+            const allLyrics = document.querySelectorAll('.lyric-item');
+            if (allLyrics.length === 0) return;
+
+            let activeIndex = 0;
+            // 找到当前歌词索引
+            for (let i = 0; i < allLyrics.length; i++) {
+                const lyricTime = Number(allLyrics[i].dataset.time);
+                const nextLyricTime = i < allLyrics.length - 1 ? Number(allLyrics[i+1].dataset.time) : audio.duration;
+                
+                if (currentTime >= lyricTime && currentTime < nextLyricTime) {
+                    activeIndex = i;
+                    break;
+                }
+            }
+
+            // 更新高亮状态
+            allLyrics.forEach((item, index) => {
+                if (index === activeIndex) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // 歌词滚动（优化边界，防止滚动过度）
+            const lineHeight = 36;
+            const boxHeight = lyricBox.clientHeight;
+            const maxScroll = Math.max(0, (allLyrics.length * lineHeight) - boxHeight);
+            const targetTop = Math.min(maxScroll, Math.max(0, activeIndex * lineHeight - boxHeight / 2 + 18));
+            lyricList.style.top = `-${targetTop}px`;
+        }
+
+        // 播放/暂停
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.innerText = '▶';
+            } else {
+                audio.play();
+                playBtn.innerText = '❚❚';
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // 上一曲/下一曲
+        prevBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + musicList.length) % musicList.length;
+            initMusic(currentIndex);
+            if (isPlaying) playMusic();
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % musicList.length;
+            initMusic(currentIndex);
+            if (isPlaying) playMusic();
+        });
+        
+        function playMusic() {
+            audio.play().catch(err => {
+                alert('播放失败：' + err.message);
+                playBtn.innerText = '▶';
+                isPlaying = false;
+            });
+            playBtn.innerText = '❚❚';
+            isPlaying = true;
+        }
+
+        // 更新进度条 + 同步歌词
+        audio.ontimeupdate = () => {
+            if (isNaN(audio.duration)) return;
+            
+            const currentTime = audio.currentTime;
+            const duration = audio.duration;
+            const progressPercent = (currentTime / duration) * 100;
+            progress.style.width = `${progressPercent}%`;
+            currentTimeEl.innerText = formatTime(currentTime);
+            
+            updateLyric();
+            
+            // 自动切歌（添加容错）
+            if (currentTime >= duration - 0.5 && duration > 0) {
+                nextBtn.click();
+            }
+        };
+
+        // 进度条跳转
+        progressBar.addEventListener('click', (e) => {
+            if (isNaN(audio.duration)) return;
+            
+            const width = progressBar.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audio.duration;
+            audio.currentTime = (clickX / width) * duration;
+            updateLyric();
+        });
+
+        // 音量调节
+        volumeBar.addEventListener('click', (e) => {
+            const width = volumeBar.clientWidth;
+            const clickX = e.offsetX;
+            const volumePercent = (clickX / width) * 100;
+            volumeProgress.style.width = `${volumePercent}%`;
+            audio.volume = volumePercent / 100;
+        });
+
+        // 时间格式化（容错处理）
+        function formatTime(time) {
+            if (isNaN(time) || time < 0) return '00:00';
+            
+            const minutes = Math.floor(time / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        }
+
+        // 初始设置
+        audio.volume = 0.8;
+        // 页面加载完成后自动聚焦播放器
+        window.addEventListener('load', () => {
+            document.querySelector('.music-player').focus();
+        });
+    </script>
+</body>
+</html>
